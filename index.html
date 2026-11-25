@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Creative Assistant Prototype</title>
+  <style>
+    :root { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #202124; background: #f7f7f8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 28px; }
+    .app { max-width: 1280px; margin: auto; background: #fff; border: 1px solid #e4e4e7; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.07); min-height: 720px; }
+    header { height: 62px; border-bottom: 1px solid #e8e8eb; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; }
+    header h1 { margin: 0; font-size: 16px; font-weight: 650; letter-spacing: -.2px; }
+    header span { font-size: 12px; color: #777; }
+    main { display: grid; grid-template-columns: 190px 1fr 350px; min-height: 658px; }
+    .nav { border-right: 1px solid #ededf0; padding: 22px 14px; background: #fafafa; }
+    .nav .label { color: #929292; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; padding: 0 10px 10px; }
+    .nav button { display:block; width:100%; text-align:left; border:0; margin:3px 0; padding:10px 12px; background:transparent; color:#555; border-radius:8px; }
+    .nav button.active, .nav button:hover { background:#ececef; color:#202124; transform:none; }
+    .workspace { padding: 34px 46px; background:#fff; }
+    .workspace .meta { font-size:12px; color:#8a8a8e; margin-bottom:28px; }
+    .draft h2, .panel h2 { margin-top: 0; font-size: 18px; letter-spacing: -.2px; }
+    .draft p { font-size: 21px; line-height: 1.8; max-width: 700px; }
+    .selected { background: #fff1c7; color: #202124; padding: 2px 3px; border-radius: 3px; }
+    .panel { border-left: 1px solid #ededf0; padding: 26px 24px; background: #fbfbfc; }
+    .panel p { line-height: 1.6; }
+    .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .panel-header .dot { width:8px; height:8px; border-radius:50%; background:#8b6cf0; display:inline-block; margin-right:7px; }
+    .status { border: 1px solid #e4e4e7; border-radius: 10px; padding: 15px; margin: 18px 0; background: #fff; color: #555; }
+    .suggestion-card { border:1px solid #ded9f6; background:#fbfaff; border-radius:12px; padding:16px; margin:18px 0; }
+    .suggestion-card .tag { display:inline-block; color:#6e54c7; background:#eeeafe; padding:5px 8px; border-radius:999px; font-size:11px; margin-bottom:11px; }
+    .prompt { margin-top:30px; border:1px solid #dedee2; border-radius:12px; padding:12px; background:#fff; color:#999; font-size:13px; }
+    .prompt button { float:right; border:0; padding:6px 9px; background:#202124; color:#fff; border-radius:7px; }
+    button, select { font: inherit; border: 1px solid #d4d4d8; border-radius: 8px; background: #fff; color: #343438; padding: 9px 12px; cursor: pointer; margin: 5px 4px 5px 0; transition: .15s ease; }
+    button:hover { border-color: #999; transform: translateY(-1px); }
+    .primary { background: #202124; border-color: #202124; color: #fff; }
+    .primary:hover { background: #000; border-color: #000; }
+    .hidden { display: none; }
+    .hint { color: #65748a; font-size: 14px; }
+    @media (max-width: 980px) { body { padding: 10px; } main { grid-template-columns: 1fr; } .nav { display:none; } .panel { border-left:0; border-top:1px solid #ededf0; } .workspace { padding:26px; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header><h1>✦ Creative Assistant</h1><span>Private workspace · Draft saved locally</span></header>
+    <main>
+      <nav class="nav"><div class="label">Workspace</div><button class="active">▣  Current draft</button><button>⌁  Suggestions</button><button>↗  Shared notes</button><div class="label" style="margin-top:28px">Project</div><button>⌂  Project home</button><button>⚙  Settings</button></nav>
+      <section class="workspace draft">
+        <div class="meta">CURRENT DRAFT  /  UNTITLED STORY</div>
+        <h2>Untitled story</h2>
+        <p id="draftText">The river was quiet in the early morning. A thin layer of mist moved above the water.</p>
+        <p class="hint">Select a passage, choose a goal, then request an optional suggestion.</p>
+        <button id="selectBtn" onclick="selectText()">Select passage</button>
+        <button id="clearBtn" onclick="clearText()">Clear selection</button>
+        <div class="prompt">Ask for help with this draft… <button onclick="selectText()">↑</button></div>
+      </section>
+
+      <aside class="panel">
+        <section id="waiting">
+          <div class="panel-header"><h2><span class="dot"></span>Assistant</h2><span class="hint">Ready</span></div>
+          <div class="status">The assistant is waiting. Your draft will not be changed automatically.</div>
+          <p class="hint">Select text to begin.</p>
+        </section>
+
+        <section id="request" class="hidden">
+          <div class="panel-header"><h2><span class="dot"></span>Improve passage</h2><span class="hint">1 selected</span></div>
+          <p>What would you like to improve?</p>
+          <select id="goal"><option value="Clarity">Clarity</option><option value="Grammar">Grammar</option><option value="Tone">Tone</option></select>
+          <button class="primary" onclick="showSuggestion()">Generate suggestion</button>
+          <button onclick="clearText()">Cancel</button>
+        </section>
+
+        <section id="suggestion" class="hidden">
+          <div class="panel-header"><h2><span class="dot"></span>Suggestion</h2><span class="hint">Optional</span></div>
+          <div class="suggestion-card"><span class="tag">Goal: <span id="goalLabel">Clarity</span></span><br>“The river remained quiet as morning began.”</div>
+          <p><strong>Why this suggestion?</strong><br>It uses a shorter sentence and a clearer time reference.</p>
+          <button onclick="showReview()">Edit suggestion</button>
+          <button class="primary" onclick="showReview()">Review change</button>
+          <button onclick="dismiss()">Dismiss</button>
+        </section>
+
+        <section id="review" class="hidden">
+          <div class="panel-header"><h2><span class="dot"></span>Review change</h2><span class="hint">Step 2 of 2</span></div>
+          <p><strong>Original</strong><br>The river was quiet in the early morning.</p>
+          <p><strong>Suggestion</strong><br>The river remained quiet as morning began.</p>
+          <div class="status">Your original draft is still unchanged.</div>
+          <button class="primary" onclick="acceptChange()">Accept and replace</button>
+          <button onclick="dismiss()">Dismiss</button>
+        </section>
+      </aside>
+    </main>
+  </div>
+  <script>
+    const sections = ['waiting','request','suggestion','review'];
+    function show(name) { sections.forEach(id => document.getElementById(id).classList.toggle('hidden', id !== name)); }
+    function selectText() { document.getElementById('draftText').innerHTML = '<span class="selected">The river was quiet in the early morning.</span> A thin layer of mist moved above the water.'; show('request'); }
+    function clearText() { document.getElementById('draftText').textContent = 'The river was quiet in the early morning. A thin layer of mist moved above the water.'; show('waiting'); }
+    function showSuggestion() { document.getElementById('goalLabel').textContent = document.getElementById('goal').value; show('suggestion'); }
+    function showReview() { show('review'); }
+    function dismiss() { show('waiting'); }
+    function acceptChange() { document.getElementById('draftText').innerHTML = '<span class="selected">The river remained quiet as morning began.</span> A thin layer of mist moved above the water.'; show('waiting'); }
+  </script>
+</body>
+</html>
